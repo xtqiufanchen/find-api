@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { getAst, getImportSpecifiers, resolveModulePath } from './utils';
+import { getAst, getImportSpecifiers, resolveModulePath, matchUrlFromFunction } from './utils';
 import traverse from '@babel/traverse';
 
 const referFiles: Record<string, any> = {};
@@ -35,7 +35,12 @@ export const findApiReferences = (filePath: string, apiCalls: Record<string, any
         throw new Error('未找到模块路径');
       }
       if (apiCalls[resolvedPath]) {
-        result.api[resolvedPath] = [...getImportSpecifiers(path.node)];
+        result.api[resolvedPath] = getImportSpecifiers(path.node).map(i => {
+          return {
+            name: i, 
+            url: apiCalls[resolvedPath][i]?.map(n => matchUrlFromFunction(n))
+          }
+        })
       } else {
         const childApiRefs = findApiReferences(resolvedPath, apiCalls, srcDir);
         result.children[resolvedPath] = childApiRefs;

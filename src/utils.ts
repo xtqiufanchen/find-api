@@ -92,3 +92,39 @@ export const saveJson = async(filePath: string, data: any) => {
   })
   return fs.writeFileSync(filePath, formatted);
 }
+
+export const matchUrlFromFunction = (functionStrting: string) => {
+  // url: '/boss/api/sensitive/batch-decryption/${code}'
+
+  if (functionStrting.match(/url: '.+'/)) {
+    return functionStrting
+      .match(/url: '.+'/)?.[0]
+      ?.replace(/url: '/, "")
+      ?.replace(/'/, "");
+  }
+
+  // url: `/boss/api/sensitive/batch-decryption/${code}`
+
+  if (functionStrting.match(/url: `[^`]+`/)) {
+    return functionStrting
+      .match(/url: `[^`]+`/)?.[0]
+      ?.replace(/url: `/, "")
+      ?.replace(/`/, "");
+  }
+};
+
+// 删除所有属性值api或者属性值children的值为空对象的对象
+export const clearObjectWithEmpty = (obj: Record<string, any>) => {
+  if (obj.children) {
+    Object.keys(obj.children).forEach((key) => {
+      const value = obj.children[key]
+
+      clearObjectWithEmpty(value)
+
+      const hasApi = value.api && Object.keys(value.api).length > 0;
+      const hasChildren = value.children && Object.keys(value.children).length > 0;
+
+      if(!hasApi && !hasChildren) delete obj.children[key]
+    })
+  }
+}
