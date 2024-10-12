@@ -5,14 +5,14 @@ import traverse from '@babel/traverse';
 const referFiles: Record<string, any> = {};
 
 export const findApiReferences = (filePath: string, apiCalls: Record<string, any>, srcDir: string): Record<string, any> => {
-  if (referFiles[filePath]) {
-    return referFiles[filePath];
-  }
+  if (referFiles[filePath]) return null;
+
   const result: any = {
     api: {},
     children: {},
   };
-  // referFiles[filePath] = result;
+
+  referFiles[filePath] = result;
 
   if (apiCalls[filePath]) {
     debugger
@@ -50,7 +50,7 @@ export const findApiReferences = (filePath: string, apiCalls: Record<string, any
       const callee = path.get('callee')
       // 动态 import
       if (callee.isImport()) {
-        const source = path.get('arguments')[0].node.value;
+        const source = (path.get('arguments')[0].node as any).value;
         const resolvedPath = resolveModulePath(srcDir, filePath, source);
         if (resolvedPath === false) {
           return

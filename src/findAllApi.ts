@@ -77,8 +77,8 @@ const parseFile = (filePath: string) => {
               apiCalls[filePath][funcName].push(detail);
             }
           } else {
-            debugger
-            throw new Error('未处理的导出类型' + declaration.type);
+            // debugger
+            // throw new Error('未处理的导出类型' + declaration.type);
           }
           // if (functionParent?.isFunctionDeclaration()) {
           //   throw new Error('未处理的函数声明');
