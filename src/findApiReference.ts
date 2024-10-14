@@ -53,7 +53,7 @@ const traverseImpl = (
             return {
               name: i,
               error: "未找到对应的 API",
-              origin: apiCalls[resolvedPath],
+              // origin: apiCalls[resolvedPath],
             };
           }
           return {
