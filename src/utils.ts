@@ -182,11 +182,13 @@ export const flatAllApi = (obj: Record<string, any>) => {
         const value = obj.children[key];
         if (value && value.api) {
           Object.keys(value.api).forEach((apikey) => {
-            const apivalue = value.api[apikey];
-            result[key].push({
-              filepath: key,
-              url: apivalue.url,
-              name: apivalue.name,
+            value.api[apikey].forEach((i) => {
+              result.push({
+                接口API路径: i.url[0],
+                接口函数名称: i.name,
+                业务文件路径: key,
+                接口文件路径: apikey,
+              });
             });
           });
         }
@@ -200,12 +202,18 @@ export const flatAllApi = (obj: Record<string, any>) => {
   return result;
 };
 
-export const importExcel = (obj: Record<string, any>) => {
-  const result = flatAllApi(obj);
+export const importExcel = (obj: Record<string, any>, excludePath: string) => {
+  const result = flatAllApi(obj).map(i => {
+    return {
+      ...i,
+      业务文件路径: i.业务文件路径.replace(excludePath, ''),
+      接口文件路径: i.接口文件路径.replace(excludePath, ''),
+    }
+  });
 
   const workbook = XLSX.utils.book_new();
   const worksheet = XLSX.utils.json_to_sheet(result);
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  XLSX.writeFile(workbook, "result.xlsx");
+  XLSX.writeFile(workbook, path.resolve(__dirname, "./output/result.xlsx"));
 };

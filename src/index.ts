@@ -13,6 +13,6 @@ const [ apiCalls, unExportRequest ]= findAllApi(projectRoot);
 const result = findApiReferences(entryFile, apiCalls, projectRoot)
 // clearObjectWithEmpty(result)
 saveJson(path.resolve(__dirname, 'output', 'result.json'), result);
-importExcel(result)
+importExcel(result, projectRoot)
 // console.log(result)
 console.log(caculateApiCount(result))
