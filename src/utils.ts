@@ -35,33 +35,47 @@ export const getAst = (filePath: string) => {
       });
     }
   }
-  return babel.parse(content, {
-    sourceType: "module",
-    plugins: ["typescript", "jsx"],
-  });
+  try {
+    return babel.parse(content, {
+      sourceType: "module",
+      plugins: ["typescript", "jsx"],
+    });
+  } catch {
+    return false
+  }
 };
 
+export const skippedImport = new Set()
 export const resolveModulePath = (
   srcDir: string,
   currentFile: string,
   importPath: string
 ): string | false | null => {
   let resolvedPath: string | null = importPath;
-  if (!resolvedPath.startsWith(".") && !resolvedPath.startsWith("@/")) {
+  if (importPath.startsWith("@ant")) {
+    debugger
+  }
+  if (!resolvedPath.startsWith(".") && !resolvedPath.startsWith("@/") && !resolvedPath.startsWith("@src")) {
     const rootDir = path.resolve(srcDir, "..");
     resolvedPath = resolvedPath.split("/")[0];
-    if (fs.existsSync(path.resolve(rootDir, "node_modules", resolvedPath))) {
-      return false;
-    } else {
-      if (importPath === "idx" || importPath.includes("lodash")) {
-        // idx解析不到。。。
-        return false;
-      }
-      throw new Error(`未找到模块路径: ${importPath}`);
-    }
+    // 认为是node_modules
+    skippedImport.add(resolvedPath)
+    return false
+    // if (/^[a-zA-z]/.test(importPath)) {
+    //   return false;
+    // } else {
+    //   if (importPath === "idx" || importPath.includes("lodash")) {
+    //     // idx解析不到。。。
+    //     return false;
+    //   }
+    //   throw new Error(`未找到模块路径: ${importPath}`);
+    // }
   }
 
   // 处理路径别名
+  if (resolvedPath.startsWith("@src")) {
+    resolvedPath = path.join(srcDir, resolvedPath.slice(4));
+  }
   if (resolvedPath.startsWith("@")) {
     resolvedPath = path.join(srcDir, resolvedPath.slice(1));
   }
