@@ -18,6 +18,14 @@ const checkFileShouldSkip = (filePath: string, srcDir: string) => {
     skipFiles.push(filePath)
     return true
   }
+  if (relativePath.startsWith("router")) {
+    skipFiles.push(filePath)
+    return true
+  }
+  if (relativePath.startsWith("store")) {
+    skipFiles.push(filePath)
+    return true
+  }
 }
 
 const traverseImpl = (
@@ -40,6 +48,14 @@ const traverseImpl = (
       }
       if (apiCalls[resolvedPath]) {
         result.api[resolvedPath] = getImportSpecifiers(path.node).map((i) => {
+          if (!apiCalls[resolvedPath][i]) {
+            // TODO: 遇到了 import * api from 'xxx/api' 的情况
+            return {
+              name: i,
+              error: "未找到对应的 API",
+              origin: apiCalls[resolvedPath],
+            };
+          }
           return {
             name: i,
             url: apiCalls[resolvedPath][i][0].parsed?.value,
