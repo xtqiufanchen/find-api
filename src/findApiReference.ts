@@ -38,7 +38,8 @@ export const findApiReferences = (filePath: string, apiCalls: Record<string, any
         result.api[resolvedPath] = getImportSpecifiers(path.node).map(i => {
           return {
             name: i, 
-            url: apiCalls[resolvedPath][i]?.map(n => matchUrlFromFunction(n))
+            url: apiCalls[resolvedPath][i]?.map(n => matchUrlFromFunction(n)),
+            origin: apiCalls[resolvedPath][i]
           }
         })
       } else {
