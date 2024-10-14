@@ -39,7 +39,7 @@ const parseFile = (filePath: string) => {
       const callee = path.get("callee");
       if (
         (t.isMemberExpression(callee.node) &&
-          t.isIdentifier(callee.node.property, { name: "get" }) &&
+          (t.isIdentifier(callee.node.property, { name: "get" }) || t.isIdentifier(callee.node.property, { name: "post" })) &&
           t.isIdentifier(callee.node.object, { name: "http" })) ||
         t.isIdentifier(callee.node, { name: "request" })
       ) {
@@ -104,21 +104,8 @@ const parseFile = (filePath: string) => {
           //   throw new Error('未处理的函数类型' + functionParent.type);
           // }
         }
-      } else if (
-        t.isMemberExpression(callee.node) &&
-        t.isIdentifier(callee.node.property, { name: "post" }) &&
-        t.isIdentifier(callee.node.object, { name: "http" })
-      ) {
-        const urlArg = path.node.arguments[0];
-        if (t.isStringLiteral(urlArg)) {
-          const api = urlArg.value;
-          const funcName = path.getFunctionParent()?.node.id?.name;
-          if (funcName) {
-            apiCalls[filePath] = apiCalls[filePath] || {};
-            apiCalls[filePath][funcName] = apiCalls[filePath][funcName] || [];
-            apiCalls[filePath][funcName].push(api);
-          }
-        }
+      } else if (t.isMemberExpression(callee.node) && t.isIdentifier(callee.node.object, { name: "http" })) {
+        throw new Error("未处理的请求类型" + callee.node.property);
       }
     },
   });
