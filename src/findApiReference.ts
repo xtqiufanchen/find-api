@@ -40,6 +40,10 @@ const traverseImpl = (
   onFindImport: (path: string, parentResult: Record<string, any>) => void
 ) => {
   const ast = getAst(filePath);
+  if (!ast) {
+    console.log("解析失败", filePath);
+    return 
+  }
   traverse(ast, {
     ImportDeclaration(path) {
       const source = path.node.source.value;

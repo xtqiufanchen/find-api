@@ -104,6 +104,10 @@ const parseFile = (filePath: string) => {
 
   // 使用 Babel 解析源代码
   const ast = getAst(filePath);
+  if (!ast) {
+    console.log('解析失败' + filePath)
+    return
+  }
   // 未导出的请求，用于排查api是否被遗漏
   const unExportRequest: any[] = [];
   const apiCalls: Record<string, Record<string, string[]>> = {};
