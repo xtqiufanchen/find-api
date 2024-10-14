@@ -71,7 +71,7 @@ export const resolveModulePath = (
 
   if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
     if (
-      [".png", ".less", ".svg", ".jpeg", ".css"].includes(
+      [".png", ".less", ".svg", ".jpeg", ".css", ".d.ts"].includes(
         path.extname(resolvedPath)
       )
     ) {
@@ -103,6 +103,7 @@ export const saveJson = async (filePath: string, data: any) => {
   return fs.writeFileSync(filePath, formatted);
 };
 
+// 从函数ast字符串中提取到url相关内容
 export const matchUrlFromFunction = (functionStrting: string) => {
   // url: '/boss/api/sensitive/batch-decryption/${code}'
 
@@ -152,7 +153,14 @@ export const caculateApiCount = (obj: Record<string, any>) => {
         if (obj.children[key]) {
           const value = obj.children[key];
           loop(value);
-          count = count + value.api ? Object.keys(value.api).length : 0;
+          count =
+            count +
+            (value.api
+              ? Object.keys(value.api).reduce(
+                  (t, i) => t + value.api[i].length,
+                  0
+                )
+              : 0);
         }
       });
     }
