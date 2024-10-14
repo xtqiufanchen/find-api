@@ -184,9 +184,9 @@ export const flatAllApi = (obj: Record<string, any>) => {
           Object.keys(value.api).forEach((apikey) => {
             value.api[apikey].forEach((i) => {
               result.push({
-                接口API路径: i.url[0],
-                接口函数名称: i.name,
+                接口API路径: i.url,
                 业务文件路径: key,
+                接口函数名称: i.name,
                 接口文件路径: apikey,
               });
             });
