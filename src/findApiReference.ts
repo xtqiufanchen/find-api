@@ -31,7 +31,9 @@ const traverseImpl = (
         result.api[resolvedPath] = getImportSpecifiers(path.node).map((i) => {
           return {
             name: i,
-            url: apiCalls[resolvedPath][i]?.map((n) => matchUrlFromFunction(n)),
+            url: apiCalls[resolvedPath][i][0].parsed.value,
+            error: apiCalls[resolvedPath][i][0].parsed.error,
+            source: apiCalls[resolvedPath][i][0].source,
             origin: apiCalls[resolvedPath][i],
           };
         });

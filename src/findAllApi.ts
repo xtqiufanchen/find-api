@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import * as t from "@babel/types";
 import { getAst, saveJson } from "./utils";
-import traverse from "@babel/traverse";
+import traverse, { NodePath } from "@babel/traverse";
 
 /** 解析所有文件，找出所有定义api的方法与文件的映射 */
 const findAllFiles = (dir: string): string[] => {
@@ -25,6 +25,54 @@ const findAllFiles = (dir: string): string[] => {
   return files;
 };
 
+const extractVariable = (node: t.Node | null | undefined, path: NodePath) => {
+  if (t.isStringLiteral(node)) {
+    // 最简单的场景，就是字符串
+    return { value: node.value}
+  }
+  if (t.isIdentifier(node)) {
+    // 是变量
+    const identifier = node
+    // 通过identifier找到对应的值
+    const binding = path.scope.getBinding(identifier.name);
+    if (t.isVariableDeclarator(binding.path.node)) {
+      const value = binding.path.node.init;
+      if (t.isLiteral(value)) {
+        return {value: value.value}
+      } else {
+        return { error: '解析url失败,定义处不是简单的变量声明' }
+      }
+    } else {
+      return { error: '解析url失败,是 identifer，但不是 variable declarator' }
+    }
+    return
+  } else if (t.isBinaryExpression(node) && node.operator === '+') {
+    console.log('node', node);
+    const { left, right } = node;
+    const leftResult = extractVariable(left, path);
+    const rightResult = extractVariable(right, path);
+    if (leftResult.error || rightResult.error) {
+      return { error: '解析url失败，不是变量声明' }
+    } else {
+      return { value: leftResult.value + rightResult.value }
+    }
+  } else {
+    return { error: '解析url失败，不是字符串，也不是表达式' }
+  }
+}
+
+// 从调用函数中提取url
+const extractUrlFromCallee = (path: NodePath<t.CallExpression>) => {
+  if (t.isObjectExpression(path.node.arguments[0])) {
+    const urlProperties = path.node.arguments[0].properties.find((prop) => prop.key.name === 'url');
+    if (t.isObjectProperty(urlProperties)) {
+      return extractVariable(urlProperties.value, path);
+    } else {
+      throw new Error('未找到url属性');
+    }
+  }
+}
+
 const parseFile = (filePath: string) => {
   const content = fs.readFileSync(filePath, "utf-8");
 
@@ -46,7 +94,8 @@ const parseFile = (filePath: string) => {
         if (path.node.start === null || path.node.end === null) {
           throw new Error("未找到函数调用位置");
         }
-        const detail = content.slice(path.node.start, path.node.end);
+        const detail = {source: content.slice(path.node.start, path.node.end), parsed: extractUrlFromCallee(path)};
+
         if (detail) {
           const functionParent = path.getFunctionParent();
           if (!functionParent) {
