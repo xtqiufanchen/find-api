@@ -60,8 +60,9 @@ export const resolveModulePath = (
     }
   }
 
+  // 处理路径别名
   if (resolvedPath.startsWith("@")) {
-    resolvedPath = resolvedPath.replace("@", srcDir);
+    resolvedPath = path.join(srcDir, resolvedPath.slice(1));
   }
 
   // 处理可能的相对路径
