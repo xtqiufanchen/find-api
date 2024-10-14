@@ -6,9 +6,20 @@ import {
   matchUrlFromFunction,
 } from "./utils";
 import traverse from "@babel/traverse";
+import path from 'path';
 
 const referFiles: Record<string, any> = {};
 const circularReferences: Record<string, string[]> = {};
+
+const skipFiles: string[] = []
+const checkFileShouldSkip = (filePath: string, srcDir: string) => {
+  const relativePath = path.relative(srcDir, filePath)
+  if (relativePath.startsWith("index")) {
+    skipFiles.push(filePath)
+    return true
+  }
+}
+
 const traverseImpl = (
   filePath: any,
   apiCalls: Record<string, any>,
@@ -92,8 +103,9 @@ export const findApiReferences = (
           Object.assign(result, referFiles[resolvedPath]);
           return null;
         }
-
-        eachQueue.push([resolvedPath, result]);
+        if (!checkFileShouldSkip(resolvedPath, srcDir)) {
+          eachQueue.push([resolvedPath, result]);
+        }
       }
     );
     referFiles[filePath] = {
@@ -102,7 +114,9 @@ export const findApiReferences = (
       children: {},
     };
   }
-
+  if (skipFiles.length) {
+    console.log("跳过解析的文件", skipFiles);
+  }
   // traverseImpl(filePath, apiCalls, srcDir, result, (resolvedPath, parentResult) => {
   //   eachQueue.push([resolvedPath, parentResult]);
   // });
