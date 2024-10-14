@@ -81,7 +81,7 @@ export const resolveModulePath = (
     }
     return resolvedPath;
   }
-  const extensions = [".js", ".ts", ".tsx", ".vue"];
+  const extensions = [".js", ".ts", ".tsx", ".vue", ".jsx"];
   for (const ext of extensions) {
     if (fs.existsSync(resolvedPath + ext)) {
       resolvedPath = resolvedPath + ext;
@@ -176,7 +176,7 @@ export const caculateApiCount = (obj: Record<string, any>) => {
 export const flatAllApi = (obj: Record<string, any>) => {
   const result = [];
 
-  const loop = (obj: Record<string, any>) => {
+  const loop = (obj: Record<string, any>, index: number = 0) => {
     if (obj && obj.children) {
       Object.keys(obj.children).forEach((key) => {
         const value = obj.children[key];
@@ -185,14 +185,16 @@ export const flatAllApi = (obj: Record<string, any>) => {
             value.api[apikey].forEach((i) => {
               result.push({
                 接口API路径: i.url,
+                层级: index,
                 业务文件路径: key,
                 接口函数名称: i.name,
                 接口文件路径: apikey,
+
               });
             });
           });
         }
-        loop(obj.children[key]);
+        loop(obj.children[key], index + 1);
       });
     }
   };
@@ -203,12 +205,12 @@ export const flatAllApi = (obj: Record<string, any>) => {
 };
 
 export const importExcel = (obj: Record<string, any>, excludePath: string) => {
-  const result = flatAllApi(obj).map(i => {
+  const result = flatAllApi(obj).map((i) => {
     return {
       ...i,
-      业务文件路径: i.业务文件路径.replace(excludePath, ''),
-      接口文件路径: i.接口文件路径.replace(excludePath, ''),
-    }
+      业务文件路径: i.业务文件路径.replace(excludePath, ""),
+      接口文件路径: i.接口文件路径.replace(excludePath, ""),
+    };
   });
 
   const workbook = XLSX.utils.book_new();

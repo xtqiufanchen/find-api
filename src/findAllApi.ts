@@ -16,7 +16,7 @@ const findAllFiles = (dir: string): string[] => {
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
         dirs.push(fullPath);
-      } else if (/\.(ts|tsx|js)$/.test(fullPath)) {
+      } else if (/\.(ts|tsx|js|jsx)$/.test(fullPath)) {
         files.push(fullPath);
       }
     });
