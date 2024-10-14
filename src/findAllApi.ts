@@ -25,7 +25,7 @@ const findAllFiles = (dir: string): string[] => {
   return files;
 };
 
-const extractVariable = (node: t.Node | null | undefined, path: NodePath) => {
+const extractVariable = (node: t.Node | null | undefined, path: NodePath, content: string) => {
   if (t.isStringLiteral(node)) {
     // 最简单的场景，就是字符串
     return { value: node.value}
@@ -42,31 +42,57 @@ const extractVariable = (node: t.Node | null | undefined, path: NodePath) => {
       } else {
         return { error: '解析url失败,定义处不是简单的变量声明' }
       }
+    } else if (binding.kind == 'param') {
+      return { error: '变量用的函数参数，是正常使用' }
     } else {
       return { error: '解析url失败,是 identifer，但不是 variable declarator' }
     }
     return
   } else if (t.isBinaryExpression(node) && node.operator === '+') {
-    console.log('node', node);
     const { left, right } = node;
-    const leftResult = extractVariable(left, path);
-    const rightResult = extractVariable(right, path);
+    const leftResult = extractVariable(left, path, content);
+    const rightResult = extractVariable(right, path, content);
     if (leftResult.error || rightResult.error) {
-      return { error: '解析url失败，不是变量声明' }
+      return { value: leftResult.value + rightResult.value, error: (leftResult.error || rightResult.error) + '解析url失败，不是变量声明' }
     } else {
       return { value: leftResult.value + rightResult.value }
     }
+  } else if (t.isTemplateLiteral(node)) {
+    let value = ''
+    let error = ''
+    for (let i = 0; i < node.quasis.length; i++) {
+      const quasi = node.quasis[i];
+      const expression = node.expressions[i]
+      if (quasi.value.raw) {
+        value += quasi.value.raw
+      }
+      if (expression) {
+        if (t.isIdentifier(expression)) {
+          const result = extractVariable(expression, path, content)
+          if (result.error) {
+            value += `\${${content.slice(expression.start, expression.end)}}`
+          } else {
+            value += result.value
+          }
+          error += result.error || ''
+        } else {
+          value += `\${${content.slice(expression.start, expression.end)}}`
+          error = '解析url失败，模板字符串中的表达式不是identifier'
+        }
+      }
+    }
+    return { value, error }
   } else {
     return { error: '解析url失败，不是字符串，也不是表达式' }
   }
 }
 
 // 从调用函数中提取url
-const extractUrlFromCallee = (path: NodePath<t.CallExpression>) => {
+const extractUrlFromCallee = (path: NodePath<t.CallExpression>, content: string) => {
   if (t.isObjectExpression(path.node.arguments[0])) {
     const urlProperties = path.node.arguments[0].properties.find((prop) => prop.key.name === 'url');
     if (t.isObjectProperty(urlProperties)) {
-      return extractVariable(urlProperties.value, path);
+      return extractVariable(urlProperties.value, path, content);
     } else {
       throw new Error('未找到url属性');
     }
@@ -94,7 +120,7 @@ const parseFile = (filePath: string) => {
         if (path.node.start === null || path.node.end === null) {
           throw new Error("未找到函数调用位置");
         }
-        const detail = {source: content.slice(path.node.start, path.node.end), parsed: extractUrlFromCallee(path)};
+        const detail = {source: content.slice(path.node.start, path.node.end), parsed: extractUrlFromCallee(path, content)};
 
         if (detail) {
           const functionParent = path.getFunctionParent();
