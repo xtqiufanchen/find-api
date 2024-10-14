@@ -4,6 +4,7 @@ import { parse as vueParse } from "@vue/compiler-sfc";
 import * as babel from "@babel/parser";
 import path from "path";
 import prettier from "prettier";
+import XLSX from "xlsx";
 
 /** 获取 import 了哪些 */
 export const getImportSpecifiers = (node: t.ImportDeclaration) => {
@@ -171,13 +172,23 @@ export const caculateApiCount = (obj: Record<string, any>) => {
   return count;
 };
 
-export const findAllChildrenKeys = (obj: Record<string, any>) => {
-  const keys: string[] = [];
+export const flatAllApi = (obj: Record<string, any>) => {
+  const result = [];
 
   const loop = (obj: Record<string, any>) => {
-    if (obj.children) {
+    if (obj && obj.children) {
       Object.keys(obj.children).forEach((key) => {
-        keys.push(key);
+        const value = obj.children[key];
+        if (value && value.api) {
+          Object.keys(value.api).forEach((apikey) => {
+            const apivalue = value.api[apikey];
+            result[key].push({
+              filepath: key,
+              url: apivalue.url,
+              name: apivalue.name,
+            });
+          });
+        }
         loop(obj.children[key]);
       });
     }
@@ -185,5 +196,15 @@ export const findAllChildrenKeys = (obj: Record<string, any>) => {
 
   loop(obj);
 
-  return keys;
+  return result;
+};
+
+export const importExcel = (obj: Record<string, any>) => {
+  const result = flatAllApi(obj);
+
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(result);
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  XLSX.writeFile(workbook, "result.xlsx");
 };
