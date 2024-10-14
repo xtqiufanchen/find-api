@@ -4,6 +4,7 @@ import { parse as vueParse } from "@vue/compiler-sfc";
 import * as babel from "@babel/parser";
 import path from "path";
 import prettier from "prettier";
+import XLSX from "xlsx";
 
 /** 获取 import 了哪些 */
 export const getImportSpecifiers = (node: t.ImportDeclaration) => {
@@ -172,13 +173,25 @@ export const caculateApiCount = (obj: Record<string, any>) => {
   return count;
 };
 
-export const findAllChildrenKeys = (obj: Record<string, any>) => {
-  const keys: string[] = [];
+export const flatAllApi = (obj: Record<string, any>) => {
+  const result = [];
 
   const loop = (obj: Record<string, any>) => {
-    if (obj.children) {
+    if (obj && obj.children) {
       Object.keys(obj.children).forEach((key) => {
-        keys.push(key);
+        const value = obj.children[key];
+        if (value && value.api) {
+          Object.keys(value.api).forEach((apikey) => {
+            value.api[apikey].forEach((i) => {
+              result.push({
+                接口API路径: i.url[0],
+                接口函数名称: i.name,
+                业务文件路径: key,
+                接口文件路径: apikey,
+              });
+            });
+          });
+        }
         loop(obj.children[key]);
       });
     }
@@ -186,5 +199,21 @@ export const findAllChildrenKeys = (obj: Record<string, any>) => {
 
   loop(obj);
 
-  return keys;
+  return result;
+};
+
+export const importExcel = (obj: Record<string, any>, excludePath: string) => {
+  const result = flatAllApi(obj).map(i => {
+    return {
+      ...i,
+      业务文件路径: i.业务文件路径.replace(excludePath, ''),
+      接口文件路径: i.接口文件路径.replace(excludePath, ''),
+    }
+  });
+
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(result);
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  XLSX.writeFile(workbook, path.resolve(__dirname, "./output/result.xlsx"));
 };
