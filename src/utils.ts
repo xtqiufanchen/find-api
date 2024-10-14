@@ -71,7 +71,14 @@ export const resolveModulePath = (
 
   if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
     if (
-      [".png", ".less", ".svg", ".jpeg", ".css"].includes(
+      ["node_modules"].includes(
+        path.extname(resolvedPath)
+      )
+    ) {
+      return false;
+    }
+    if (
+      [".png", ".less", ".svg", ".jpeg", ".css", ".d.ts"].includes(
         path.extname(resolvedPath)
       )
     ) {
