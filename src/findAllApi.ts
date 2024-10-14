@@ -153,15 +153,9 @@ export const findAllApi = (dir: string) => {
   let allApiCalls: Record<string, Record<string, string[]>> = {};
   let allUnExportRequest: any[] = [];
   for (const filePath of allFiles) {
-    if (
-      !filePath.includes("node_modules") &&
-      !filePath.includes(".d.ts") &&
-      !filePath.includes("static")
-    ) {
-      const [apiCalls, unExportRequest] = parseFile(filePath);
-      allApiCalls = { ...allApiCalls, ...apiCalls };
-      allUnExportRequest = [...allUnExportRequest, ...unExportRequest];
-    }
+    const [apiCalls, unExportRequest] = parseFile(filePath);
+    allApiCalls = { ...allApiCalls, ...apiCalls };
+    allUnExportRequest = [...allUnExportRequest, ...unExportRequest];
   }
   saveCache(dir, [allApiCalls, allUnExportRequest]);
   return [allApiCalls, allUnExportRequest] as const;

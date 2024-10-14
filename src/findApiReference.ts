@@ -14,13 +14,7 @@ export const findApiReferences = (
   apiCalls: Record<string, any>,
   srcDir: string
 ): Record<string, any> => {
-  if (
-    referFiles[filePath]
-    // filePath.includes("node_modules") ||
-    // filePath.includes(".d.ts") ||
-    // filePath.includes("static")
-  )
-    return null;
+  if (referFiles[filePath]) return null;
 
   const result: any = {
     api: {},
@@ -35,8 +29,6 @@ export const findApiReferences = (
     //   result.api.push(...apis);
     // }
   }
-
-  // if (!fs.existsSync(filePath)) return null;
 
   const content = fs.readFileSync(filePath, "utf-8");
   const ast = getAst(filePath);
