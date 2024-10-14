@@ -188,9 +188,11 @@ const parseFile = (filePath: string) => {
   return [apiCalls, unExportRequest] as const;
 };
 
+const version = '1.0.0';
+
 const readCache = (filePath: string) => {
   const cacheFileName = filePath.replaceAll("/", "_");
-  const cacheFilePath = path.resolve(__dirname, `.cache/${cacheFileName}.json`);
+  const cacheFilePath = path.resolve(__dirname, `.cache/${cacheFileName}_${version}.json`);
   if (fs.existsSync(cacheFilePath)) {
     return JSON.parse(fs.readFileSync(cacheFilePath, "utf-8"));
   } else {
@@ -200,7 +202,7 @@ const readCache = (filePath: string) => {
 
 const saveCache = (filePath: string, result: any) => {
   const cacheFileName = filePath.replaceAll("/", "_");
-  const cacheFilePath = path.resolve(__dirname, `.cache/${cacheFileName}.json`);
+  const cacheFilePath = path.resolve(__dirname, `.cache/${cacheFileName}_${version}.json`);
   saveJson(cacheFilePath, result);
 };
 
