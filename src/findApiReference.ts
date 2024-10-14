@@ -26,6 +26,10 @@ const checkFileShouldSkip = (filePath: string, srcDir: string) => {
     skipFiles.push(filePath)
     return true
   }
+  if (relativePath.endsWith(".d.ts")) {
+    skipFiles.push(filePath)
+    return true
+  }
 }
 
 const traverseImpl = (
