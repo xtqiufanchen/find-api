@@ -8,31 +8,15 @@ import {
 import traverse from "@babel/traverse";
 
 const referFiles: Record<string, any> = {};
-
-export const findApiReferences = (
-  filePath: string,
+const circularReferences: Record<string, string[]> = {};
+const traverseImpl = (
+  filePath: any,
   apiCalls: Record<string, any>,
-  srcDir: string
-): Record<string, any> => {
-  if (referFiles[filePath]) return null;
-
-  const result: any = {
-    api: {},
-    children: {},
-  };
-
-  referFiles[filePath] = result;
-
-  if (apiCalls[filePath]) {
-    debugger;
-    // for (const [funcName, apis] of Object.entries(apiCalls[filePath])) {
-    //   result.api.push(...apis);
-    // }
-  }
-
-  const content = fs.readFileSync(filePath, "utf-8");
+  srcDir: string,
+  result: Record<string, any>,
+  onFindImport: (path: string, parentResult: Record<string, any>) => void
+) => {
   const ast = getAst(filePath);
-
   traverse(ast, {
     ImportDeclaration(path) {
       const source = path.node.source.value;
@@ -52,8 +36,8 @@ export const findApiReferences = (
           };
         });
       } else {
-        const childApiRefs = findApiReferences(resolvedPath, apiCalls, srcDir);
-        result.children[resolvedPath] = childApiRefs;
+        result.children[resolvedPath] = { api: {}, children: {} };
+        onFindImport(resolvedPath, result.children[resolvedPath]);
       }
     },
     CallExpression(path) {
@@ -68,11 +52,57 @@ export const findApiReferences = (
         if (!resolvedPath) {
           throw new Error("未找到模块路径");
         }
-        const childApiRefs = findApiReferences(resolvedPath, apiCalls, srcDir);
-        result.children[resolvedPath] = childApiRefs;
+        result.children[resolvedPath] = { api: {}, children: {} };
+        onFindImport(resolvedPath, result.children[resolvedPath]);
       }
     },
   });
+};
 
+export const findApiReferences = (
+  filePath: string,
+  apiCalls: Record<string, any>,
+  srcDir: string
+): Record<string, any> => {
+  const result: any = {
+    api: {},
+    children: {},
+  };
+
+  if (apiCalls[filePath]) {
+    debugger;
+    // for (const [funcName, apis] of Object.entries(apiCalls[filePath])) {
+    //   result.api.push(...apis);
+    // }
+  }
+  const eachQueue: any[] = [[filePath, result]];
+  while (eachQueue.length) {
+    const [filePath, parentResult] = eachQueue.shift();
+    traverseImpl(
+      filePath,
+      apiCalls,
+      srcDir,
+      parentResult,
+      (resolvedPath, result) => {
+        if (referFiles[resolvedPath]) {
+          circularReferences[filePath] = circularReferences[filePath] || [];
+          circularReferences[filePath].push(resolvedPath);
+          Object.assign(result, referFiles[resolvedPath]);
+          return null;
+        }
+
+        eachQueue.push([resolvedPath, result]);
+      }
+    );
+    referFiles[filePath] = {
+      api: parentResult.api,
+      info: "此文件已被引用，跳过此文件子模块的解析，请手动查看子模块是否需要解析",
+      children: {},
+    };
+  }
+
+  // traverseImpl(filePath, apiCalls, srcDir, result, (resolvedPath, parentResult) => {
+  //   eachQueue.push([resolvedPath, parentResult]);
+  // });
   return result;
 };
