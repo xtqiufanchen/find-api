@@ -52,10 +52,7 @@ export const resolveModulePath = (
   importPath: string
 ): string | false | null => {
   let resolvedPath: string | null = importPath;
-  if (importPath.startsWith("@ant")) {
-    debugger
-  }
-  if (!resolvedPath.startsWith(".") && !resolvedPath.startsWith("@/") && !resolvedPath.startsWith("@src")) {
+  if (!resolvedPath.startsWith(".") && !resolvedPath.startsWith("@/") && !resolvedPath.startsWith("@src") && !resolvedPath.startsWith("/@/")) {
     const rootDir = path.resolve(srcDir, "..");
     resolvedPath = resolvedPath.split("/")[0];
     // 认为是node_modules
@@ -73,6 +70,9 @@ export const resolveModulePath = (
   }
 
   // 处理路径别名
+  if (resolvedPath.startsWith("/@/")) {
+    resolvedPath = path.join(srcDir, resolvedPath.slice(3));
+  }
   if (resolvedPath.startsWith("@src")) {
     resolvedPath = path.join(srcDir, resolvedPath.slice(4));
   }

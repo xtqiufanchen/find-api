@@ -99,6 +99,19 @@ const extractUrlFromCallee = (path: NodePath<t.CallExpression>, content: string)
   }
 }
 
+// hasUrlProperty
+const getHasUrlProperty = (path: NodePath<t.CallExpression>) => {
+  if (t.isObjectExpression(path.node.arguments[0])) {
+    const urlProperties = path.node.arguments[0].properties.find((prop) => prop.key?.name === 'url');
+    if (t.isObjectProperty(urlProperties)) {
+      return true
+    } else {
+      return false;
+    }
+  }
+  return false
+}
+
 const parseFile = (filePath: string) => {
   const content = fs.readFileSync(filePath, "utf-8");
 
@@ -115,11 +128,14 @@ const parseFile = (filePath: string) => {
   traverse(ast, {
     CallExpression(path) {
       const callee = path.get("callee");
+
+      const hasUrlProperty = getHasUrlProperty(path);
       if (
         (t.isMemberExpression(callee.node) &&
           (t.isIdentifier(callee.node.property, { name: "get" }) || t.isIdentifier(callee.node.property, { name: "post" })) &&
           t.isIdentifier(callee.node.object, { name: "http" })) ||
-        t.isIdentifier(callee.node, { name: "request" })
+        t.isIdentifier(callee.node, { name: "request" }) ||
+        hasUrlProperty // 有url属性的调用方法，也认为是请求
       ) {
         if (path.node.start === null || path.node.end === null) {
           throw new Error("未找到函数调用位置");
@@ -139,6 +155,35 @@ const parseFile = (filePath: string) => {
             );
           });
           if (!exportDeclaration) {
+            if (functionParent.isObjectMethod() || functionParent.isClassMethod()) {
+              // 有可能作为对象定义的属性,取出对象的key
+              const keyNode = functionParent.node.key;
+              if (t.isIdentifier(keyNode)) {
+                const funcName = keyNode.name;
+                if (funcName) {
+                  apiCalls[filePath] = apiCalls[filePath] || { __isNamespace__: [] };
+                  apiCalls[filePath][funcName] = apiCalls[filePath][funcName] || [];
+                  apiCalls[filePath][funcName].push(detail);
+                }
+                return
+              } else {
+                throw new Error('提取api失败，对象键名是 变量')
+              }
+            }
+            if (functionParent.isArrowFunctionExpression() && t.isObjectProperty(functionParent.parent)) {
+              // 有可能是匿名函数
+              if (t.isIdentifier(functionParent.parent.key)) {
+                const keyNode = functionParent.parent.key;
+                const funcName = keyNode.name;
+                if (funcName) {
+                  apiCalls[filePath] = apiCalls[filePath] || { __isNamespace__: [] };
+                  apiCalls[filePath][funcName] = apiCalls[filePath][funcName] || [];
+                  apiCalls[filePath][funcName].push(detail);
+                }
+              } else {
+                throw new Error('提取api失败，对象键名是 变量')
+              }
+            }
             unExportRequest.push({
               filePath,
               name: functionParent.node.id?.name,

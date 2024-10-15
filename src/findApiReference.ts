@@ -7,6 +7,7 @@ import {
 } from "./utils";
 import traverse from "@babel/traverse";
 import path from 'path';
+import * as t from "@babel/types";
 
 const referFiles: Record<string, any> = {};
 const circularReferences: Record<string, string[]> = {};
@@ -44,6 +45,7 @@ const traverseImpl = (
     console.log("解析失败", filePath);
     return 
   }
+  let importNameSpaceApi = []
   traverse(ast, {
     ImportDeclaration(path) {
       const source = path.node.source.value;
@@ -55,6 +57,11 @@ const traverseImpl = (
         throw new Error("未找到模块路径");
       }
       if (apiCalls[resolvedPath]) {
+        if (apiCalls[resolvedPath].__isNamespace__ || t.isImportNamespaceSpecifier(path.node.specifiers[0])) {
+          // 命名空间
+          importNameSpaceApi.push(...getImportSpecifiers(path.node).map(item => ({name: item, path: resolvedPath})))
+          return
+        }
         result.api[resolvedPath] = getImportSpecifiers(path.node).map((i) => {
           if (!apiCalls[resolvedPath][i]) {
             // TODO: 遇到了 import * api from 'xxx/api' 的情况
@@ -91,6 +98,26 @@ const traverseImpl = (
         }
         result.children[resolvedPath] = { api: {}, children: {} };
         onFindImport(resolvedPath, result.children[resolvedPath]);
+      }
+
+      if (importNameSpaceApi.length) {
+        // 找到调用命名空间的api
+        if (t.isMemberExpression(callee.node) && t.isIdentifier(callee.node.object)) {
+          const objectName = callee.node.object.name
+          const apiPath = importNameSpaceApi.find(item => item.name === objectName)?.path
+          if (apiPath) {
+            const apiName = callee.node.property.name
+            result.api[apiPath] = result.api[apiPath] || []
+            result.api[apiPath].push({
+              name: apiName,
+              url: apiCalls[apiPath][apiName][0].parsed?.value,
+              error: apiCalls[apiPath][apiName][0].parsed?.error,
+              source: apiCalls[apiPath][apiName][0].source,
+              origin: apiCalls[apiPath][0],
+            })
+          }
+
+        }
       }
     },
   });
