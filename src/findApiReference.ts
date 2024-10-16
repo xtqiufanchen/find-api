@@ -42,7 +42,7 @@ const traverseImpl = (
 ) => {
   const ast = getAst(filePath);
   if (!ast) {
-    console.log("解析失败", filePath);
+    console.log("解析失败 ", filePath);
     return 
   }
   let importNameSpaceApi = []

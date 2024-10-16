@@ -38,7 +38,7 @@ export const getAst = (filePath: string) => {
   try {
     return babel.parse(content, {
       sourceType: "module",
-      plugins: ["typescript", "jsx"],
+      plugins: ["typescript", "jsx", "decorators"],
     });
   } catch {
     return false
@@ -95,7 +95,7 @@ export const resolveModulePath = (
     }
     return resolvedPath;
   }
-  const extensions = [".js", ".ts", ".tsx", ".vue", ".jsx"];
+  const extensions = [".js", ".ts", ".tsx", ".vue", ".jsx", ".d.ts"];
   for (const ext of extensions) {
     if (fs.existsSync(resolvedPath + ext)) {
       resolvedPath = resolvedPath + ext;

@@ -118,8 +118,8 @@ const parseFile = (filePath: string) => {
   // 使用 Babel 解析源代码
   const ast = getAst(filePath);
   if (!ast) {
-    console.log('解析失败' + filePath)
-    return
+    console.log('解析失败 ' + filePath)
+    return false
   }
   // 未导出的请求，用于排查api是否被遗漏
   const unExportRequest: any[] = [];
@@ -261,15 +261,21 @@ export const findAllApi = (dir: string) => {
     console.log(dir, "此目录已缓存所有api的映射，返回缓存结果");
     return cacheResult;
   }
-
+  const parseErrorFiles: string[] = [];
   const allFiles = findAllFiles(dir);
   let allApiCalls: Record<string, Record<string, string[]>> = {};
   let allUnExportRequest: any[] = [];
   for (const filePath of allFiles) {
-    const [apiCalls, unExportRequest] = parseFile(filePath);
-    allApiCalls = { ...allApiCalls, ...apiCalls };
-    allUnExportRequest = [...allUnExportRequest, ...unExportRequest];
+    const result = parseFile(filePath);
+    if (result === false) {
+      parseErrorFiles.push(filePath);
+    } else {
+      const [apiCalls, unExportRequest] = result;
+      allApiCalls = { ...allApiCalls, ...apiCalls };
+      allUnExportRequest = [...allUnExportRequest, ...unExportRequest];
+    }
   }
   saveCache(dir, [allApiCalls, allUnExportRequest]);
+  console.log("解析失败的文件", parseErrorFiles);
   return [allApiCalls, allUnExportRequest] as const;
 };
