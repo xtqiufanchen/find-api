@@ -90,7 +90,13 @@ const extractVariable = (node: t.Node | null | undefined, path: NodePath, conten
 // 从调用函数中提取url
 const extractUrlFromCallee = (path: NodePath<t.CallExpression>, content: string) => {
   if (t.isObjectExpression(path.node.arguments[0])) {
-    const urlProperties = path.node.arguments[0].properties.find((prop) => prop.key.name === 'url');
+    const urlProperties = path.node.arguments[0].properties.find((prop) => {
+      if (prop.type !== 'ObjectProperty') {
+        console.log('解析url失败,是 SpreadElement')
+        return false
+      }
+      return prop.key.name === 'url'
+    });
     if (t.isObjectProperty(urlProperties)) {
       return extractVariable(urlProperties.value, path, content);
     } else {
