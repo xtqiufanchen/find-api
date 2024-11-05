@@ -102,6 +102,9 @@ const extractUrlFromCallee = (path: NodePath<t.CallExpression>, content: string)
     } else {
       throw new Error('未找到url属性');
     }
+  } else {
+    // http.post('url')
+    return extractVariable(path.node.arguments[0], path, content);
   }
 }
 
