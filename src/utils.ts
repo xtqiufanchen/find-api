@@ -52,6 +52,10 @@ export const resolveModulePath = (
   importPath: string
 ): string | false | null => {
   let resolvedPath: string | null = importPath;
+  if (typeof resolvedPath !== 'string') {
+    skippedImport.add(resolvedPath)
+    return false
+  }
   if (!resolvedPath.startsWith(".") && !resolvedPath.startsWith("@/") && !resolvedPath.startsWith("@src") && !resolvedPath.startsWith("/@/")) {
     const rootDir = path.resolve(srcDir, "..");
     resolvedPath = resolvedPath.split("/")[0];
