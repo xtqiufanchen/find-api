@@ -5,8 +5,8 @@ import { findApiReferences } from './findApiReference';
 import { saveJson, clearObjectWithEmpty, caculateApiCount, importExcel, skippedImport } from './utils';
 import { prepare } from './prepare';
 
-const projectRoot = '/Users/chenqiufan/work/mfe-boss-magpiebridge-react/src/'
-const entryFile = path.join(projectRoot, '/pages/SalesTask/SalesTaskSetting.tsx');
+const projectRoot = '/Users/xt02755/Desktop/Code/mfe-boss-customerfund/client'
+const entryFile = path.join(projectRoot, '/view/customerfund/WaterLevelBoard/WaterLevelBoard.vue'); 
 // const projectRoot = '/Users/chenqiufan/work/mfe-boss-operation-react/src'
 // const entryFile = path.join(projectRoot, '/pages/Notification/ReceiptTemplateManagement/index.tsx');
 // const projectRoot = '/Users/chenqiufan/work/bossfrontend/client'
@@ -25,7 +25,7 @@ const [ apiCalls, unExportRequest ]= findAllApi(projectRoot);
 const result = findApiReferences(entryFile, apiCalls, projectRoot)
 // clearObjectWithEmpty(result)
 saveJson(path.resolve(__dirname, 'output', 'result.json'), result);
-importExcel(result, projectRoot)
+importExcel(result, projectRoot, entryFile)
 // console.log(result)
 console.log(caculateApiCount(result))
 console.log('未导出的请求', unExportRequest)

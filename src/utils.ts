@@ -167,6 +167,14 @@ export const clearObjectWithEmpty = (obj: Record<string, any>) => {
 export const caculateApiCount = (obj: Record<string, any>) => {
   let count = 0;
 
+  if (obj && obj.api) {
+    Object.keys(obj.api).forEach((apikey) => {
+      obj.api[apikey].forEach((i) => {
+        count = count + 1;
+      });
+    });
+  }
+
   const loop = (obj: Record<string, any>) => {
     if (obj && obj.children) {
       Object.keys(obj.children).forEach((key) => {
@@ -191,8 +199,22 @@ export const caculateApiCount = (obj: Record<string, any>) => {
   return count;
 };
 
-export const flatAllApi = (obj: Record<string, any>) => {
+export const flatAllApi = (obj: Record<string, any>, root: string) => {
   const result = [];
+
+  if (obj && obj.api) {
+    Object.keys(obj.api).forEach((apikey) => {
+      obj.api[apikey].forEach((i) => {
+        result.push({
+          接口API路径: i.url,
+          层级: 0,
+          业务文件路径: root,
+          接口函数名称: i.name,
+          接口文件路径: apikey,
+        });
+      });
+    });
+  }
 
   const loop = (obj: Record<string, any>, index: number = 0) => {
     if (obj && obj.children) {
@@ -203,7 +225,7 @@ export const flatAllApi = (obj: Record<string, any>) => {
             value.api[apikey].forEach((i) => {
               result.push({
                 接口API路径: i.url,
-                层级: index,
+                层级: index + 1,
                 业务文件路径: key,
                 接口函数名称: i.name,
                 接口文件路径: apikey,
@@ -222,8 +244,8 @@ export const flatAllApi = (obj: Record<string, any>) => {
   return result;
 };
 
-export const importExcel = (obj: Record<string, any>, excludePath: string) => {
-  const result = flatAllApi(obj).map((i) => {
+export const importExcel = (obj: Record<string, any>, excludePath: string, entryFile: string) => {
+  const result = flatAllApi(obj, excludePath + entryFile).map((i) => {
     return {
       ...i,
       业务文件路径: i.业务文件路径.replace(excludePath, ""),
