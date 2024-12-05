@@ -220,6 +220,13 @@ const parseFile = (filePath: string) => {
               apiCalls[filePath][funcName] = apiCalls[filePath][funcName] || [];
               apiCalls[filePath][funcName].push(detail);
             }
+          } else if (t.isClassDeclaration(declaration)) {
+            const funcName = declaration.id?.name;
+            if (funcName) {
+              apiCalls[filePath] = apiCalls[filePath] || {};
+              apiCalls[filePath][funcName] = apiCalls[filePath][funcName] || [];
+              apiCalls[filePath][funcName].push(detail);
+            }
           } else {
             // debugger
             // throw new Error('未处理的导出类型' + declaration.type);
