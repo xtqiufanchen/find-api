@@ -143,7 +143,8 @@ const parseFile = (filePath: string) => {
         (t.isMemberExpression(callee.node) &&
           (t.isIdentifier(callee.node.property, { name: "get" }) || t.isIdentifier(callee.node.property, { name: "post" })) &&
           t.isIdentifier(callee.node.object, { name: "http" })) ||
-        t.isIdentifier(callee.node, { name: "request" }) ||
+          t.isIdentifier(callee.node, { name: "request" }) ||
+          t.isIdentifier(callee.node, { name: "doRequest" }) ||
         hasUrlProperty // 有url属性的调用方法，也认为是请求
       ) {
         if (path.node.start === null || path.node.end === null) {
